@@ -325,19 +325,54 @@ Then update role in Supabase dashboard.
 - This is normal for demo - production requires BKash sandbox setup
 - To test, enter any 11-digit number for BKash
 
-## Production Deployment
+## 🚀 Production Deployment & Access
 
-### Frontend (Vercel)
-```bash
-npm run build
-# Deploy 'dist' folder to Vercel
-```
+The project is now configured with a **unified architecture** where the backend serves the frontend. This simplifies deployment to a single service.
 
-### Backend (Railway/Render)
+### 1. Local Production Preview
+
+To test the production build on your computer:
+
 ```bash
-npm install
+# 1. Install all dependencies
+npm run install-all
+
+# 2. Build the frontend
+npm run build:frontend
+
+# 3. Start the unified production server
+# Ensure your .env file in the backend folder is configured
 npm start
 ```
+
+Once started, the website will be accessible at: **http://localhost:5000**
+
+### 2. Deploying to Vercel (Recommended)
+
+This project is optimized for a **full-stack deployment on Vercel**.
+
+1.  **Push your code to GitHub.**
+2.  **Import the project into Vercel.**
+3.  **Configure Environment Variables** in Vercel Project Settings:
+    *   `SUPABASE_URL`: Your Supabase Project URL
+    *   `SUPABASE_KEY`: Your Supabase Anon Key
+    *   `JWT_SECRET`: A secure random string
+4.  **Deploy!** Vercel will automatically detect the `vercel.json` and deploy the frontend as static files and the backend as Serverless Functions.
+
+### 3. Deploying to Other Platforms (Render, Railway, etc.)
+
+When you deploy to a platform like Render or Railway:
+
+1.  **Connect your repository.**
+2.  **Set the Build Command**: `npm run install-all && npm run build:frontend`
+3.  **Set the Start Command**: `npm start`
+4.  **Add Environment Variables**:
+    *   `SUPABASE_URL`: Your Supabase Project URL
+    *   `SUPABASE_KEY`: Your Supabase Anon Key
+    *   `JWT_SECRET`: A secure random string for authentication
+    *   `PORT`: `5000` (or the default provided by the host)
+
+Your website will then be available at the URL provided by your hosting platform (e.g., `https://your-store.onrender.com`).
 
 ### Environment Variables (Production)
 Update all `.env` variables with production Supabase project keys.
