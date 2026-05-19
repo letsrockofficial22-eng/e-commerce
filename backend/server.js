@@ -4,12 +4,25 @@ import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import helmet from 'helmet'
+import compression from 'compression'
+import morgan from 'morgan'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 dotenv.config()
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const app = express()
 
 // Middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for simplicity in this demo, or configure it properly
+}))
+app.use(compression())
+app.use(morgan('dev'))
 app.use(cors())
 app.use(express.json())
 
@@ -26,17 +39,20 @@ const authenticateToken = (req, res, next) => {
 
   if (!token) return res.status(401).json({ message: 'No token' })
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key', (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ message: 'Invalid token' })
     req.user = user
     next()
   })
 }
 
+// ==================== API ROUTES ====================
+const apiRouter = express.Router()
+
 // ==================== AUTH ROUTES ====================
 
 // Register
-app.post('/auth/register', async (req, res) => {
+apiRouter.post('/auth/register', async (req, res) => {
   try {
     const { email, password, name } = req.body
 
@@ -58,7 +74,7 @@ app.post('/auth/register', async (req, res) => {
 
     const token = jwt.sign(
       { id: data[0].id, email, role: data[0].role },
-      process.env.JWT_SECRET || 'your_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     )
 
@@ -82,7 +98,7 @@ app.post('/auth/register', async (req, res) => {
 })
 
 // Login
-app.post('/auth/login', async (req, res) => {
+apiRouter.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body
 
@@ -103,7 +119,7 @@ app.post('/auth/login', async (req, res) => {
 
     const token = jwt.sign(
       { id: data.id, email, role: data.role },
-      process.env.JWT_SECRET || 'your_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     )
 
@@ -129,7 +145,7 @@ app.post('/auth/login', async (req, res) => {
 // ==================== PRODUCT ROUTES ====================
 
 // Get all products
-app.get('/products', async (req, res) => {
+apiRouter.get('/products', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('products')
@@ -144,7 +160,7 @@ app.get('/products', async (req, res) => {
 })
 
 // Get single product
-app.get('/products/:id', async (req, res) => {
+apiRouter.get('/products/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('products')
@@ -160,7 +176,7 @@ app.get('/products/:id', async (req, res) => {
 })
 
 // Create product
-app.post('/products', authenticateToken, async (req, res) => {
+apiRouter.post('/products', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -191,7 +207,7 @@ app.post('/products', authenticateToken, async (req, res) => {
 })
 
 // Update product
-app.put('/products/:id', authenticateToken, async (req, res) => {
+apiRouter.put('/products/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -211,7 +227,7 @@ app.put('/products/:id', authenticateToken, async (req, res) => {
 })
 
 // Delete product
-app.delete('/products/:id', authenticateToken, async (req, res) => {
+apiRouter.delete('/products/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -232,7 +248,7 @@ app.delete('/products/:id', authenticateToken, async (req, res) => {
 // ==================== ORDER ROUTES ====================
 
 // Get all orders
-app.get('/orders', authenticateToken, async (req, res) => {
+apiRouter.get('/orders', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -251,7 +267,7 @@ app.get('/orders', authenticateToken, async (req, res) => {
 })
 
 // Get single order
-app.get('/orders/:id', async (req, res) => {
+apiRouter.get('/orders/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('orders')
@@ -267,7 +283,7 @@ app.get('/orders/:id', async (req, res) => {
 })
 
 // Create order
-app.post('/orders', async (req, res) => {
+apiRouter.post('/orders', async (req, res) => {
   try {
     const { customerName, customerEmail, customerPhone, shippingAddress, city, postalCode, items, totalAmount, paymentMethod } = req.body
 
@@ -296,7 +312,7 @@ app.post('/orders', async (req, res) => {
 })
 
 // Update order status
-app.put('/orders/:id', authenticateToken, async (req, res) => {
+apiRouter.put('/orders/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -318,7 +334,7 @@ app.put('/orders/:id', authenticateToken, async (req, res) => {
 // ==================== USER ROUTES ====================
 
 // Get all users
-app.get('/users', authenticateToken, async (req, res) => {
+apiRouter.get('/users', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -337,7 +353,7 @@ app.get('/users', authenticateToken, async (req, res) => {
 })
 
 // Get user logins
-app.get('/users/logins', authenticateToken, async (req, res) => {
+apiRouter.get('/users/logins', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -359,7 +375,7 @@ app.get('/users/logins', authenticateToken, async (req, res) => {
 // ==================== BKASH ROUTES ====================
 
 // Initiate BKash payment
-app.post('/bkash/payment', async (req, res) => {
+apiRouter.post('/bkash/payment', async (req, res) => {
   try {
     const { orderId, amount, customerName, customerPhone, bkashNumber } = req.body
 
@@ -391,7 +407,7 @@ app.post('/bkash/payment', async (req, res) => {
 })
 
 // Execute BKash payment
-app.post('/bkash/execute', async (req, res) => {
+apiRouter.post('/bkash/execute', async (req, res) => {
   try {
     const { paymentId, transactionId } = req.body
 
@@ -414,8 +430,19 @@ app.post('/bkash/execute', async (req, res) => {
 })
 
 // Health check
-app.get('/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
   res.json({ message: 'API is running' })
+})
+
+app.use('/api', apiRouter)
+
+// Serve static files from React app
+const frontendPath = path.join(__dirname, '../frontend/dist')
+app.use(express.static(frontendPath))
+
+// Catch-all route for SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'))
 })
 
 const PORT = process.env.PORT || 5000
