@@ -347,7 +347,19 @@ npm start
 
 Once started, the website will be accessible at: **http://localhost:5000**
 
-### 2. Deploying to the Web (Render, Railway, etc.)
+### 2. Deploying to Vercel (Recommended)
+
+This project is optimized for a **full-stack deployment on Vercel**.
+
+1.  **Push your code to GitHub.**
+2.  **Import the project into Vercel.**
+3.  **Configure Environment Variables** in Vercel Project Settings:
+    *   `SUPABASE_URL`: Your Supabase Project URL
+    *   `SUPABASE_KEY`: Your Supabase Anon Key
+    *   `JWT_SECRET`: A secure random string
+4.  **Deploy!** Vercel will automatically detect the `vercel.json` and deploy the frontend as static files and the backend as Serverless Functions.
+
+### 3. Deploying to Other Platforms (Render, Railway, etc.)
 
 When you deploy to a platform like Render or Railway:
 
